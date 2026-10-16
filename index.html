@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alex — Portfolio</title>
+  <meta name="description" content="Portfolio de Alex: desarrollador multiplataforma en formación. Proyectos, stack técnico y contacto.">
+  <!-- SPEC-001 R6: rutas SIEMPRE relativas. Sin dependencias externas: HTML/CSS/JS estático. -->
+  <style>
+    /* ===== DESIGN-001 §1 — Color ===== */
+    :root {
+      --bg: #FFFFFF;
+      --ink: #0A0A0A;
+      --ink-2: #404040;
+      --muted: #595959;
+      --surface: #F5F5F5;
+      --surface-2: #EDEDED;
+      --border: #E5E5E5;
+      --border-strong: #D4D4D4;
+      --btn: #171717;
+      --btn-ink: #FAFAFA;
+      /* Acento configurable (DESIGN-001 §1). Por defecto: violeta.
+         El estudiante cambia el acento poniendo data-accent="azul|verde|naranja|rosa|amarillo"
+         en <html>. Sin atributo (o con "violeta") se usa el violeta por defecto. */
+      --accent: #6D28D9;
+      --accent-soft: #EDE9FE;
+      /* Semánticos (independientes del acento) */
+      --ok: #047857;
+      --warn: #A16207;
+      --bad: #B91C1C;
+      /* Tipografía (DESIGN-001 §2) */
+      --font-text: "Geist", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+      --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      /* Espacio (DESIGN-001 §3) */
+      --max-content: 1120px;
+      --max-reading: 720px;
+      --gutter: 24px;
+      --section-gap: 64px;
+      /* Movimiento (DESIGN-001 §5): curva de aceleración única */
+      --ease: cubic-bezier(.2, .8, .2, 1);
+    }
+    /* Las 6 opciones de acento de DESIGN-001 §1. Se activan con data-accent en <html>. */
+    :root[data-accent="azul"]     { --accent: #1D4ED8; --accent-soft: #DBEAFE; }
+    :root[data-accent="verde"]    { --accent: #047857; --accent-soft: #D1FAE5; }
+    :root[data-accent="naranja"]  { --accent: #C2410C; --accent-soft: #FFEDD5; }
+    :root[data-accent="rosa"]     { --accent: #BE185D; --accent-soft: #FCE7F3; }
+    :root[data-accent="amarillo"] { --accent: #A16207; --accent-soft: #FEF3C7; }
+
+    @media (min-width: 900px) {
+      :root {
+        --gutter: 48px;
+        --section-gap: 96px;
+      }
+    }
+
+    /* ===== Base ===== */
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    /* R4: nada puede desbordar el viewport -> sin scroll horizontal a 360px */
+    html, body { overflow-x: clip; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-text);
+      font-size: 17px;
+      line-height: 28px;
+    }
+    /* Las imágenes nunca superan el ancho de su contenedor */
+    img { max-width: 100%; height: auto; display: block; }
+    /* URLs y correos largos (monoespaciada, sin espacios) se parten antes de desbordar */
+    a { overflow-wrap: anywhere; }
+    a {
+      color: inherit;
+      text-decoration: underline;
+      text-decoration-color: var(--border-strong);
+      text-underline-offset: 3px;
+      transition: text-decoration-color 150ms var(--ease), color 150ms var(--ease), background-color 150ms var(--ease), border-color 150ms var(--ease);
+    }
+    a:hover { text-decoration-color: var(--accent); }
+
+    /* Foco de teclado siempre visible (DESIGN-001 §6): contorno 2px acento, separado 3px */
+    a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    /* ===== Skip link (R5): primer elemento enfocable ===== */
+    .skip-link {
+      position: absolute;
+      left: var(--gutter);
+      top: 12px;
+      z-index: 100;
+      background: var(--btn);
+      color: var(--btn-ink);
+      padding: 10px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 15px;
+      line-height: 24px;
+      /* Oculto sin animación de posición: clip no es animable y DESIGN-001 §5
+         no permite animar posición. Al enfocar se revela al instante. */
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .skip-link:focus-visible {
+      clip: auto;
+      clip-path: none;
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    /* ===== Layout ===== */
+    .container {
+      max-width: var(--max-content);
+      margin-inline: auto;
+      padding-inline: var(--gutter);
+    }
+    main > section { margin-block: var(--section-gap); }
+    .reading { max-width: var(--max-reading); }
+    /* R4: en móvil todo enlace interactivo es un objetivo táctil de >= 44px de alto.
+       Los enlaces dentro de párrafos se quedan en línea (no rompen el texto corrido)
+       pero ganan área pulsable vertical. */
+    @media (max-width: 899.98px) {
+      main a {
+        min-height: 44px;
+        align-items: center;
+      }
+      main a:not(.skip-link) {
+        display: inline-flex;
+      }
+      .sobre-mi p a, .ahora-list a {
+        display: inline;
+        min-height: 0;
+        padding-block: 10px;
+      }
+    }
+
+    /* ===== Header / portada ===== */
+    .site-header {
+      border-bottom: 1px solid var(--border);
+    }
+    .site-header .container {
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+    }
+    .site-header .brand {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 20px;
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    .hero { padding-top: var(--section-gap); }
+    .hero-photo {
+      width: 96px;
+      height: 96px;
+      max-width: 100%;
+      border-radius: 16px;
+      object-fit: cover;
+      background: var(--surface);
+    }
+    .hero h1 {
+      font-size: clamp(40px, 6vw, 64px);
+      line-height: 1.05;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 24px 0 8px;
+      /* Nombres o titulares muy largos se parten antes de desbordar (R4) */
+      overflow-wrap: break-word;
+    }
+    .hero .titular {
+      font-size: 20px;
+      line-height: 30px;
+      color: var(--ink-2);
+      margin: 0 0 8px;
+    }
+    .hero .claim {
+      font-size: 20px;
+      line-height: 30px;
+      color: var(--ink);
+      margin: 0 0 16px;
+      max-width: var(--max-reading);
+    }
+    .hero .presentacion {
+      color: var(--ink-2);
+      max-width: var(--max-reading);
+      margin: 0 0 20px;
+    }
+    .hero .pill { margin: 0 0 12px; }
+    .hero .ubicacion {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 20px;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    /* ===== Píldora de disponibilidad (DESIGN-001 §4) ===== */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 28px;
+      padding: 4px 14px;
+      border-radius: 999px;
+      background: var(--surface);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 20px;
+      color: var(--ink-2);
+    }
+    /* Punto decorativo (R5: el estado lo da el texto, no solo el color) */
+    .pill .pill-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex: none;
+    }
+
+    /* ===== Secciones ===== */
+    .section-kicker {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 8px;
+    }
+    h2 {
+      font-size: 28px;
+      line-height: 1.2;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin: 0 0 24px;
+    }
+    .sobre-mi p { color: var(--ink-2); max-width: var(--max-reading); }
+    .ahora-list {
+      margin: 16px 0 0;
+      padding-left: 20px;
+      color: var(--ink-2);
+    }
+    .ahora-list li { margin-bottom: 8px; }
+
+    /* ===== Chips de stack (DESIGN-001 §4) ===== */
+    .stack-group { margin-bottom: 20px; }
+    .stack-group h3 {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 20px;
+      font-weight: 500;
+      color: var(--muted);
+      margin: 0 0 8px;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .chip {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 20px;
+      background: var(--surface);
+      border-radius: 8px;
+      padding: 6px 12px;
+      color: var(--ink-2);
+      /* Un chip nunca supera el ancho disponible; el texto se recorta con elipsis */
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ===== Proyectos ===== */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    /* Cada tarjeta puede encoger hasta el ancho del viewport sin desbordar (R4) */
+    .projects-grid > li { min-width: 0; }
+    @media (min-width: 700px) {
+      .projects-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    .project-frame {
+      background: var(--accent-soft);
+      border-radius: 16px;
+      padding: 12px;
+      border: 1px solid transparent;
+      /* Movimiento §5.1: solo cambios de color, 150ms */
+      transition: border-color 150ms var(--ease);
+    }
+    .project-frame:hover { border-color: var(--border-strong); }
+    .project-frame img {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      border-radius: 8px;
+      background: var(--surface);
+      /* DESIGN-001 §5 no permite animar transform: la escala en hover
+         es instantánea (sin transition). */
+    }
+    .project-frame:hover img { transform: scale(1.02); }
+    .project-frame .img-fallback {
+      aspect-ratio: 16 / 10;
+      border-radius: 8px;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 20px;
+      color: var(--muted);
+    }
+    .project-body { padding: 16px 4px 0; }
+    .project-body h3 {
+      font-size: 18px;
+      line-height: 1.3;
+      font-weight: 600;
+      margin: 0 0 8px;
+    }
+    .project-body p {
+      font-size: 15px;
+      line-height: 24px;
+      color: var(--ink-2);
+      margin: 0 0 12px;
+    }
+    .project-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 16px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 20px;
+      color: var(--muted);
+    }
+    .project-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      margin-top: 8px;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    /* ===== Contacto ===== */
+    .contact-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .contact-list a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+    }
+    .contact-list .correo {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      /* El correo no tiene espacios: se parte antes de desbordar el viewport (R4) */
+      overflow-wrap: anywhere;
+    }
+
+    /* ===== Estados vacíos (SPEC §9): nunca pantalla en blanco ===== */
+    .empty-state {
+      border: 1px dashed var(--border-strong);
+      border-radius: 12px;
+      padding: 24px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 24px;
+      background: var(--surface);
+    }
+    [hidden] { display: none !important; }
+    /* Texto solo para lectores de pantalla (R5) */
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* ===== Footer ===== */
+    .site-footer {
+      border-top: 1px solid var(--border);
+      margin-top: var(--section-gap);
+      padding: 24px 0 48px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 20px;
+    }
+
+    /* ===== Movimiento (DESIGN-001 §5) =====
+       Solo tres animaciones en todo el producto:
+       1. Cambios de color en interactivos — 150ms (en las reglas de cada componente).
+       2. Aparición/desaparición de la identidad en la barra — 200ms.
+       3. Entrada escalonada de la portada al cargar — 400ms, 60ms entre elementos.
+       Curva única: cubic-bezier(.2, .8, .2, 1). */
+
+    /* §5.2 — Identidad en la barra superior: 200ms */
+    .site-header .brand {
+      animation: brand-in 200ms var(--ease) both;
+    }
+    @keyframes brand-in {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* §5.3 — Entrada escalonada de la portada: 400ms, 60ms entre elementos.
+       Los elementos se revelan solo cuando sus datos están cargados (clase
+       .datos-cargados en <body>), para no animar contenido oculto. */
+    @keyframes entrada {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: none; }
+    }
+    body.datos-cargados .hero > * {
+      animation: entrada 400ms var(--ease) both;
+    }
+    body.datos-cargados .hero > *:nth-child(1) { animation-delay: 0ms; }
+    body.datos-cargados .hero > *:nth-child(2) { animation-delay: 60ms; }
+    body.datos-cargados .hero > *:nth-child(3) { animation-delay: 120ms; }
+    body.datos-cargados .hero > *:nth-child(4) { animation-delay: 180ms; }
+    body.datos-cargados .hero > *:nth-child(5) { animation-delay: 240ms; }
+    body.datos-cargados .hero > *:nth-child(6) { animation-delay: 300ms; }
+
+    /* R5: con prefers-reduced-motion NO se ejecuta ninguna animación. */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+      .project-frame:hover img { transform: none; }
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+  <!-- R5: enlace de salto al contenido, primer elemento enfocable de la página -->
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+  <header class="site-header">
+    <div class="container">
+      <span class="brand" id="brand">Portfolio</span>
+    </div>
+  </header>
+
+  <main id="contenido">
+    <!-- ===== Perfil (R1) ===== -->
+    <section class="hero container" id="perfil" aria-labelledby="perfil-nombre">
+      <!-- Contenido estático mínimo: visible aunque el JS falle.
+           R5/§9: si la foto no carga (incluso antes de que corra el script),
+           se retira el src y el navegador muestra el texto alternativo. -->
+      <img class="hero-photo" id="perfil-foto" src="assets/profile.jpg" alt="Fotografía de Alex" width="96" height="96" onerror="this.removeAttribute('src')" hidden>
+      <h1 id="perfil-nombre">Alex</h1>
+      <p class="titular" id="perfil-titular">Desarrollador multiplataforma en formación</p>
+      <p class="claim" id="perfil-claim" hidden></p>
+      <p class="presentacion" id="perfil-presentacion" hidden></p>
+      <!-- R5: la disponibilidad se comunica con texto; el punto de acento es
+           decorativo y se oculta a lectores de pantalla (aria-hidden). -->
+      <p class="pill" id="perfil-disponibilidad" hidden><span class="pill-dot" aria-hidden="true"></span><span class="pill-text" id="perfil-disponibilidad-texto"></span></p>
+      <p class="ubicacion" id="perfil-ubicacion" hidden></p>
+    </section>
+
+    <!-- ===== Sobre mí (R1) ===== -->
+    <section class="container sobre-mi" id="sobre-mi" aria-labelledby="sobre-mi-titulo">
+      <p class="section-kicker">Sobre mí</p>
+      <h2 id="sobre-mi-titulo">Sobre mí</h2>
+      <div id="sobre-mi-parrafos">
+        <p class="empty-state" id="sobre-mi-vacio" hidden>No se han podido cargar los datos de esta sección.</p>
+      </div>
+      <div id="ahora-bloque" hidden>
+        <h3 class="section-kicker" id="ahora-titulo" style="margin-top:24px">Ahora</h3>
+        <ul class="ahora-list" id="ahora-lista"></ul>
+      </div>
+    </section>
+
+    <!-- ===== Stack (R1) ===== -->
+    <section class="container" id="stack" aria-labelledby="stack-titulo">
+      <p class="section-kicker">Stack</p>
+      <h2 id="stack-titulo">Stack técnico</h2>
+      <div id="stack-grupos">
+        <p class="empty-state" id="stack-vacio" hidden>No se han podido cargar los datos de esta sección.</p>
+      </div>
+    </section>
+
+    <!-- ===== Proyectos (R2) ===== -->
+    <section class="container" id="proyectos" aria-labelledby="proyectos-titulo">
+      <p class="section-kicker">Proyectos</p>
+      <h2 id="proyectos-titulo">Proyectos</h2>
+      <ul class="projects-grid" id="proyectos-lista"></ul>
+      <p class="empty-state" id="proyectos-vacio" hidden>No se han podido cargar los proyectos.</p>
+    </section>
+
+    <!-- ===== Contacto (R3) ===== -->
+    <section class="container" id="contacto" aria-labelledby="contacto-titulo">
+      <p class="section-kicker">Contacto</p>
+      <h2 id="contacto-titulo">Contacto</h2>
+      <ul class="contact-list" id="contacto-lista"></ul>
+      <p class="empty-state" id="contacto-vacio" hidden>No se han podido cargar los datos de contacto.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p id="footer-texto">Portfolio · Hecho con HTML, CSS y JavaScript estáticos.</p>
+    </div>
+  </footer>
+
+  <noscript>
+    <div class="container">
+      <p class="empty-state">JavaScript está desactivado: los datos del perfil y los proyectos no se pueden cargar. La estructura de la página sigue disponible.</p>
+    </div>
+  </noscript>
+
+  <script>
+    /* SPEC-001 — carga de datos con rutas relativas (R6).
+       Edge cases (§9): JSON ausente o mal formado -> estado vacío controlado,
+       nunca pantalla en blanco. Dato opcional ausente -> su bloque no se renderiza. */
+    (function () {
+      "use strict";
+
+      function mostrar(id) {
+        var el = document.getElementById(id);
+        if (el) { el.hidden = false; }
+      }
+      function ocultar(id) {
+        var el = document.getElementById(id);
+        if (el) { el.hidden = true; }
+      }
+      function ponerTexto(id, texto) {
+        var el = document.getElementById(id);
+        if (el && typeof texto === "string" && texto.trim() !== "") {
+          el.textContent = texto;
+          el.hidden = false;
+          return true;
+        }
+        return false;
+      }
+      function cargarJSON(url) {
+        return fetch(url).then(function (res) {
+          if (!res.ok) { throw new Error("HTTP " + res.status); }
+          return res.json();
+        });
+      }
+
+      /* ---------- Perfil (R1) ---------- */
+      function renderPerfil(perfil) {
+        if (!perfil || typeof perfil !== "object") {
+          mostrar("sobre-mi-vacio");
+          mostrar("stack-vacio");
+          mostrar("contacto-vacio");
+          return;
+        }
+
+        // Cabecera
+        if (ponerTexto("perfil-nombre", perfil.nombre)) {
+          document.title = perfil.nombre + " — Portfolio";
+          ponerTexto("brand", perfil.nombre);
+        }
+        ponerTexto("perfil-titular", perfil.titular);
+        ponerTexto("perfil-claim", perfil.claim);
+        ponerTexto("perfil-presentacion", perfil.presentacion);
+        ponerTexto("perfil-ubicacion", perfil.ubicacion);
+        // La píldora muestra el texto de disponibilidad; el punto es decorativo (R5)
+        if (ponerTexto("perfil-disponibilidad-texto", perfil.disponibilidad)) {
+          mostrar("perfil-disponibilidad");
+        }
+
+        // Foto: si no carga, se muestra el texto alternativo (§9).
+        // El onerror inline cubre fallos anteriores a este script; este listener
+        // cubre los fallos al cambiar el src desde aquí.
+        if (typeof perfil.foto === "string" && perfil.foto.trim() !== "") {
+          var foto = document.getElementById("perfil-foto");
+          foto.addEventListener("error", function () {
+            foto.removeAttribute("src");
+          }, { once: true });
+          foto.src = perfil.foto;
+          foto.alt = "Fotografía de " + (perfil.nombre || "la persona del portfolio");
+          foto.hidden = false;
+        }
+
+        // Sobre mí: párrafos
+        var contParrafos = document.getElementById("sobre-mi-parrafos");
+        var parrafos = Array.isArray(perfil.sobreMi) ? perfil.sobreMi.filter(function (p) {
+          return typeof p === "string" && p.trim() !== "";
+        }) : [];
+        if (parrafos.length > 0) {
+          ocultar("sobre-mi-vacio");
+          parrafos.forEach(function (texto) {
+            var p = document.createElement("p");
+            p.textContent = texto;
+            contParrafos.appendChild(p);
+          });
+        } else {
+          mostrar("sobre-mi-vacio");
+        }
+
+        // Ahora: lista (opcional)
+        var ahora = Array.isArray(perfil.ahora) ? perfil.ahora.filter(function (i) {
+          return typeof i === "string" && i.trim() !== "";
+        }) : [];
+        if (ahora.length > 0) {
+          var listaAhora = document.getElementById("ahora-lista");
+          ahora.forEach(function (item) {
+            var li = document.createElement("li");
+            li.textContent = item;
+            listaAhora.appendChild(li);
+          });
+          mostrar("ahora-bloque");
+        }
+
+        // Stack: chips monoespaciados por grupo
+        var grupos = document.getElementById("stack-grupos");
+        var hayStack = false;
+        if (perfil.stack && typeof perfil.stack === "object") {
+          Object.keys(perfil.stack).forEach(function (grupo) {
+            var items = Array.isArray(perfil.stack[grupo]) ? perfil.stack[grupo].filter(function (t) {
+              return typeof t === "string" && t.trim() !== "";
+            }) : [];
+            if (items.length === 0) { return; }
+            hayStack = true;
+            var div = document.createElement("div");
+            div.className = "stack-group";
+            var h3 = document.createElement("h3");
+            h3.textContent = grupo;
+            var ul = document.createElement("ul");
+            ul.className = "chips";
+            items.forEach(function (tec) {
+              var li = document.createElement("li");
+              li.className = "chip";
+              li.textContent = tec;
+              ul.appendChild(li);
+            });
+            div.appendChild(h3);
+            div.appendChild(ul);
+            grupos.appendChild(div);
+          });
+        }
+        if (!hayStack) { mostrar("stack-vacio"); }
+
+        // Contacto (R3): correo mailto monoespaciado, GitHub y LinkedIn
+        var contacto = document.getElementById("contacto-lista");
+        var hayContacto = false;
+        function addContacto(href, texto, clase, externo) {
+          var li = document.createElement("li");
+          var a = document.createElement("a");
+          a.href = href;
+          a.textContent = texto;
+          if (clase) { a.className = clase; }
+          if (externo) {
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            // Coherente con los enlaces de proyecto: la nueva pestaña también se
+            // comunica con texto a lectores de pantalla (R5), no solo visualmente.
+            var sr = document.createElement("span");
+            sr.className = "visually-hidden";
+            sr.textContent = " (se abre en una pestaña nueva)";
+            a.appendChild(sr);
+          }
+          li.appendChild(a);
+          contacto.appendChild(li);
+          hayContacto = true;
+        }
+        if (typeof perfil.correo === "string" && perfil.correo.trim() !== "") {
+          addContacto("mailto:" + perfil.correo, perfil.correo, "correo", false);
+        }
+        if (typeof perfil.github === "string" && perfil.github.trim() !== "") {
+          addContacto(perfil.github, "GitHub", null, true);
+        }
+        if (typeof perfil.linkedin === "string" && perfil.linkedin.trim() !== "") {
+          addContacto(perfil.linkedin, "LinkedIn", null, true);
+        }
+        if (!hayContacto) { mostrar("contacto-vacio"); }
+      }
+
+      /* ---------- Proyectos (R2) ---------- */
+      function renderProyectos(proyectos) {
+        var lista = document.getElementById("proyectos-lista");
+        if (!Array.isArray(proyectos) || proyectos.length === 0) {
+          mostrar("proyectos-vacio");
+          return;
+        }
+        // Orden por fecha descendente (más reciente primero).
+        // Estable: si dos proyectos comparten fecha, conservan su orden en el JSON.
+        var ordenados = proyectos
+          .map(function (proy, i) { return { proy: proy, i: i }; })
+          .sort(function (a, b) {
+            var fa = (a.proy && typeof a.proy.fecha === "string") ? a.proy.fecha : "";
+            var fb = (b.proy && typeof b.proy.fecha === "string") ? b.proy.fecha : "";
+            if (fa !== fb) { return fb.localeCompare(fa); }
+            return a.i - b.i;
+          })
+          .map(function (item) { return item.proy; });
+
+        ordenados.forEach(function (proy) {
+          if (!proy || typeof proy !== "object") { return; }
+          var li = document.createElement("li");
+
+          // Marco de proyecto (DESIGN-001 §4): relleno 12px accent-soft, imagen 16:10
+          var frame = document.createElement("div");
+          frame.className = "project-frame";
+          var altTexto = "Imagen del proyecto " + (proy.nombre || "sin nombre");
+          if (typeof proy.imagen === "string" && proy.imagen.trim() !== "") {
+            var img = document.createElement("img");
+            // §9: si la imagen no carga, el marco muestra el texto alternativo, no queda roto.
+            // El listener se registra ANTES de asignar src para no perder el evento.
+            img.addEventListener("error", function () {
+              var fallback = document.createElement("div");
+              fallback.className = "img-fallback";
+              fallback.textContent = altTexto;
+              img.replaceWith(fallback);
+            }, { once: true });
+            img.alt = altTexto;
+            img.loading = "lazy";
+            img.src = proy.imagen;
+            frame.appendChild(img);
+          } else {
+            // §9: proyecto sin imagen -> marco con el texto alternativo
+            var sinImg = document.createElement("div");
+            sinImg.className = "img-fallback";
+            sinImg.textContent = altTexto;
+            frame.appendChild(sinImg);
+          }
+          li.appendChild(frame);
+
+          var body = document.createElement("div");
+          body.className = "project-body";
+
+          if (typeof proy.nombre === "string" && proy.nombre.trim() !== "") {
+            var h3 = document.createElement("h3");
+            h3.textContent = proy.nombre;
+            body.appendChild(h3);
+          }
+          if (typeof proy.descripcion === "string" && proy.descripcion.trim() !== "") {
+            var p = document.createElement("p");
+            p.textContent = proy.descripcion;
+            body.appendChild(p);
+          }
+
+          var meta = document.createElement("div");
+          meta.className = "project-meta";
+          if (typeof proy.tecnologia === "string" && proy.tecnologia.trim() !== "") {
+            var tec = document.createElement("span");
+            tec.className = "chip";
+            tec.textContent = proy.tecnologia;
+            meta.appendChild(tec);
+          }
+          if (typeof proy.fecha === "string" && proy.fecha.trim() !== "") {
+            var fecha = document.createElement("span");
+            // Dato en monoespaciada (DESIGN-001 §2); <time> con fecha máquina si es AAAA[-MM[-DD]]
+            if (/^\d{4}(-\d{2}){0,2}$/.test(proy.fecha)) {
+              var time = document.createElement("time");
+              time.dateTime = proy.fecha;
+              time.textContent = proy.fecha;
+              fecha.appendChild(time);
+            } else {
+              fecha.textContent = proy.fecha;
+            }
+            meta.appendChild(fecha);
+          }
+          if (meta.childNodes.length > 0) { body.appendChild(meta); }
+
+          // §9: proyecto sin enlace -> se muestra sin el enlace.
+          // Reglas de negocio: los enlaces abren en pestaña nueva con rel="noopener noreferrer".
+          if (typeof proy.enlace === "string" && proy.enlace.trim() !== "") {
+            var a = document.createElement("a");
+            a.className = "project-link";
+            a.href = proy.enlace;
+            a.target = "_blank";
+            a.rel = "noopener noreferrer";
+            a.textContent = "Ver repositorio";
+            // La nueva pestaña no se comunica solo con el icono: también con texto (R5)
+            var sr = document.createElement("span");
+            sr.className = "visually-hidden";
+            sr.textContent = " (se abre en una pestaña nueva)";
+            a.appendChild(sr);
+            body.appendChild(a);
+          }
+
+          li.appendChild(body);
+          lista.appendChild(li);
+        });
+
+        if (lista.childNodes.length === 0) { mostrar("proyectos-vacio"); }
+      }
+
+      /* ---------- Carga: cada JSON es independiente (§9: si falta uno, el resto funciona) ---------- */
+      cargarJSON("data/profile.json")
+        .then(function (json) { renderPerfil(json && json.perfil); })
+        .catch(function () {
+          mostrar("sobre-mi-vacio");
+          mostrar("stack-vacio");
+          mostrar("contacto-vacio");
+        })
+        .then(function () {
+          // Entrada escalonada de la portada (DESIGN-001 §5.3): se activa cuando
+          // los datos del perfil ya están pintados (o su estado vacío visible),
+          // para no animar elementos ocultos. Con prefers-reduced-motion el CSS
+          // anula la animación (R5).
+          document.body.classList.add("datos-cargados");
+        });
+
+      cargarJSON("data/projects.json")
+        .then(function (json) { renderProyectos(json && json.proyectos); })
+        .catch(function () { mostrar("proyectos-vacio"); });
+    })();
+  </script>
+</body>
+</html>
